@@ -1,0 +1,210 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="row mb-1" style="display: none">
+            <div class="col-md-4">
+                <label>ID :</label>
+            </div>
+            <div class="col-md-8">
+                <input id="txtId"
+                       class="inputField form-control"
+                       style="width: 100%"
+                       placeholder="ID" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-4">
+                <label>Name :</label>
+            </div>
+            <div class="col-md-8">
+                <input id="txtName"
+                       class="inputField form-control"
+                       style="width: 100%"
+                       placeholder="Name" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-4">
+                <label>Card No :</label>
+            </div>
+            <div class="col-md-8">
+                <input id="txtCard"
+                       class="inputField form-control"
+                       style="width: 100%"
+                       placeholder="Card Number" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-4">
+                <label>Salary :</label>
+            </div>
+            <div class="col-md-8">
+                <input id="txtSalary"
+                       type="number"
+                       class="inputField form-control"
+                       style="width: 100%"
+                       placeholder="Salary" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-4">
+                <label>Birthdate :</label>
+            </div>
+            <div class="col-md-8">
+                <input id="txtBirthdate"
+                       type="date"
+                       class="inputField form-control"
+                       style="width: 100%"
+                       placeholder="Birthdate" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-4">
+                <label>Photo :</label>
+            </div>
+            <div class="col-md-8">
+                <input id="filePhoto"
+                       type="file"
+                       value="Upload Photo"
+                       style="width: 100%"/>
+
+                <img id="imgViewer" width="230" height="230" style="border:1px solid #000000;margin-top:10px" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-4"></div>
+            <div class="col-md-8">
+                <button class="btn btn-primary" onclick="Save()">Save</button>
+                <button class="btn btn-danger" onclick="Reset()" style="float: right">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <table id="tblEmployee" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Employee Id</th>
+                    <th>Name</th>
+                    <th>Card Number</th>
+                    <th>Salary</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+<script type="text/javascript">
+    var _employees = [];
+
+    $(document).ready(function(){
+        LoadEmployees();
+    });
+
+    $('#filePhoto').change(function(e){
+        var files = e.target.files;
+        $('#imgViewer').attr('src', window.URL.createObjectURL(files[0]));
+    });
+
+    function LoadEmployees() {
+        _employees = [];
+        $('#tblEmployee tbody tr').remove();
+
+        $.get('https://localhost:7025/api/Employee/Select', function(emps){
+            _employees = emps;
+            $.map(emps, function(emp){
+                var tempStr =
+                `<tr>
+                    <td>${emp.id}</td>
+                    <td>${emp.name}</td>
+                    <td>${emp.cardNumber}</td>
+                    <td>${emp.salary}</td>
+                    <td>
+                        <button class='btn btn-info' onclick="Edit('${emp.id}')">Edit</button>
+                        <button class='btn btn-danger' onclick="Delete('${emp.id}')">Delete</button>
+                    </td>
+                </tr>`;
+
+                $('#tblEmployee tbody').append(tempStr);
+            });
+        });
+    }
+
+    function Reset(){
+        $('.inputField').val('');
+        $('#imgViewer').removeAttr('src');
+        $("#filePhoto").val(null);
+    }
+
+    function Save(){
+        debugger;
+        let employee = {};
+        let dataEmpty = [null, undefined, ''];
+
+        var files = $('#filePhoto').prop('files');
+        var data = new FormData();
+
+        for(var i = 0; i < files.length; i++) {
+            data.append("Name", $.trim($('#txtName').val()));
+            data.append("CardNumber", $.trim($('#txtCard').val()));
+            data.append("Salary", $.trim($('#txtSalary').val()));
+            data.append("Birthdate", $.trim($('#txtBirthdate').val()));
+            data.append("IsPermanent", true);
+            data.append("File", files[i]);
+        }
+
+        if (!dataEmpty.includes($.trim($('#txtId').val())))
+        {
+            data.append("Id", $.trim($('#txtId').val()));
+        }
+
+        
+
+        $.ajax({
+            url: "https://localhost:7025/api/Employee/Save",
+            method: "POST",
+            contentType: false,
+            processData: false,
+            data: data,
+            success: function (result) {
+                LoadEmployees();
+            },
+            error: function(err){
+
+            }
+        });
+
+    }
+
+    function Edit(id){
+        let employee = _employees.find(x => x.id == id);
+        $('#txtId').val(employee.id);
+        $('#txtName').val(employee.name);
+        $('#txtCard').val(employee.cardNumber);
+        $('#txtSalary').val(employee.salary);
+        $('#txtBirthdate').val(employee.birthdate.split('T')[0]);
+        $('#imgViewer').attr('src', employee.fileString);
+    }
+
+    function Delete(id){
+        $.ajax({
+            url: 'https://localhost:7025/api/Employee/Delete?id=' + id,
+            method:'DELETE'
+        })
+        .done(function(data){
+            alert('Delete Successfully');
+            LoadEmployees();
+        })
+    }
+
+</script>
